@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caixa Preta — técnicas de prompt</title>
+<style>
+:root{--bg:#0a0a0c;--surface:#131317;--surface2:#1b1b21;--line:#2a2a33;--text:#ececf1;--muted:#9a9aa8;--accent:#ff7a1a;--bad:#ff5c6c;--bad-bg:#2a1418;--good:#3ddc97;--good-bg:#10261d;--code:#0e0e11;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f6f6f8;--surface:#fff;--surface2:#efeff3;--line:#dcdce4;--text:#18181d;--muted:#5f5f6e;--accent:#e55f00;--bad:#d62839;--bad-bg:#fdecee;--good:#0f9f66;--good-bg:#e6f7ef;--code:#f3f3f7;color-scheme:light}}
+:root[data-theme="light"]{--bg:#f6f6f8;--surface:#fff;--surface2:#efeff3;--line:#dcdce4;--text:#18181d;--muted:#5f5f6e;--accent:#e55f00;--bad:#d62839;--bad-bg:#fdecee;--good:#0f9f66;--good-bg:#e6f7ef;--code:#f3f3f7;color-scheme:light}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background-image:radial-gradient(900px 400px at 85% -10%,color-mix(in srgb,var(--accent) 14%,transparent),transparent)}
+button{font:inherit;color:inherit;cursor:pointer}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.03em}
+.logo span{color:var(--accent)}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 25%,transparent);animation:pulse 2.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 9px transparent}}
+.top{display:none}
+aside{position:fixed;inset:0 auto 0 0;width:272px;background:var(--surface);border-right:1px solid var(--line);padding:calc(22px + env(safe-area-inset-top,0px)) 14px 22px;overflow-y:auto;z-index:30;transition:transform .25s}
+aside .logo{padding:0 8px 18px}
+.cat{margin-bottom:18px}
+.ch{display:flex;align-items:center;gap:9px;padding:6px 8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ci{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.ci svg{width:16px;height:16px}
+.it{display:flex;gap:10px;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:10px;font-size:14.5px;color:var(--text);transition:.15s}
+.it:hover{background:var(--surface2)}
+.it.on{background:var(--accent);color:#111;font-weight:600}
+.it b{opacity:.55;min-width:18px}
+.ov{display:none;position:fixed;inset:0;background:#0009;z-index:20}
+.wrap{margin-left:272px;max-width:1120px;padding:34px 24px 40px}
+.kick{display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.kick svg{width:16px;height:16px}
+.card{animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+h2{margin:8px 0 0;font-size:clamp(24px,5vw,34px);letter-spacing:-.025em;line-height:1.15}
+.why{color:var(--muted);margin:8px 0 18px;max-width:640px}
+.tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px}
+.tab{flex:1;border:0;background:none;color:var(--muted);padding:10px;border-radius:9px;font-weight:600}
+.tab.on[data-v="bad"]{background:var(--bad-bg);color:var(--bad)}
+.tab.on[data-v="good"]{background:var(--good-bg);color:var(--good)}
+.grid{display:grid;gap:14px}
+.panel{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden;min-width:0}
+.panel.bad{border-top:3px solid var(--bad)}
+.panel.good{border-top:3px solid var(--good)}
+.ph{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 0;font-weight:700;font-size:14px}
+.bad .ph span{color:var(--bad)}.good .ph span{color:var(--good)}
+.cp{border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:12px}
+.cp:hover{color:var(--text)}
+.lab{padding:12px 14px 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.box{margin:0 14px 12px;padding:12px 14px;background:var(--code);border:1px solid var(--line);border-radius:12px;font-size:14.5px;white-space:pre-wrap;word-break:break-word}
+.box.p,.box.c{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+.note{padding:0 14px 14px;font-size:13.5px;color:var(--muted)}
+.tip{margin-top:16px;padding:14px 16px;border-radius:14px;background:var(--surface2);border-left:3px solid var(--accent);font-size:15px}
+.pn{display:flex;gap:10px;margin-top:16px}
+.pn button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.pn button:hover{border-color:var(--accent)}
+footer{margin-top:38px;padding-top:20px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--muted)}
+footer strong{color:var(--text)}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.badge i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.fn{width:100%;font-size:12px}
+@media (min-width:1180px){.tabs{display:none}.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:1179px){.grid[data-v="bad"] .good,.grid[data-v="good"] .bad{display:none}}
+@media (max-width:859px){
+ aside{transform:translateX(-100%);width:min(300px,84vw)}
+ body.open aside{transform:none}
+ body.open .ov{display:block}
+ .wrap{margin-left:0;padding:16px 16px 32px}
+ .top{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;align-items:center;justify-content:space-between;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);padding:10px 16px;border-bottom:1px solid var(--line)}
+ .top .logo{font-size:19px}
+ .mb{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;display:flex;gap:8px;align-items:center;font-size:14px}
+ .mb svg{width:18px;height:18px}
+}
+</style>
+</head>
+<body>
+<div class="top"><div class="logo"><i class="dot"></i>Caixa <span>Preta</span></div><button class="mb" id="mb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Temas</button></div>
+<div class="ov" id="ov"></div>
+<aside><div class="logo"><i class="dot"></i>Caixa <span>Preta</span></div><div id="side"></div></aside>
+<div class="wrap"><main id="main"></main>
+<footer>
+ <div>Feito por <strong>Israel Silva</strong> · Dev</div>
+ <div class="badge"><i></i>Criado com IA: <strong>Claude Sonnet 5.5</strong> · Anthropic</div>
+ <div class="fn">Os resultados são exemplos ilustrativos: a IA pode responder de formas diferentes a cada vez.</div>
+</footer></div>
+<script>
+const IC={
+b:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+c:'<path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>',
+t:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'};
+const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+const D=[
+{id:"b",name:"Prompt básico",items:[
+{n:"Seja específico",w:"Pedidos vagos geram respostas genéricas. Diga o quê, para quem e com qual limite.",
+bp:"Me fala sobre marketing.",br:"Marketing é o conjunto de estratégias para promover produtos e serviços. Existem várias áreas: digital, conteúdo, SEO, e-mail…\n\n(longo, correto e inútil para o seu caso)",
+gp:"Tenho uma hamburgueria pequena. Dê 5 ideias de posts para Instagram que atraiam clientes para o jantar de sexta, sem anúncios pagos.",
+gr:"1. Bastidores: vídeo de 15s montando o burger da casa.\n2. Enquete nos stories: “qual combo você pede?”\n3. Oferta relâmpago para quem comentar até quinta.\n4. Repost de foto de cliente.\n5. Contagem regressiva para sexta.",
+t:"O quê + para quem + onde + qual limite."},
+{n:"Dê contexto",w:"A IA não conhece a sua situação. O que você não conta, ela inventa ou ignora.",
+bp:"Escreve um e-mail pedindo desconto.",br:"Prezados, gostaria de solicitar um desconto. Fico no aguardo.\n\n(desconto em quê? por quê?)",
+gp:"Sou cliente há 3 anos de um plano de internet de R$ 120. Um concorrente oferece o mesmo por R$ 90. Escreva um e-mail educado pedindo que igualem o preço para eu não cancelar.",
+gr:"Assunto: Pedido de revisão do meu plano\n\nOlá! Sou cliente há 3 anos e gosto do serviço. Recebi uma oferta de R$ 90 por um plano equivalente e prefiro continuar com vocês. Seria possível igualar o valor?",
+t:"Conte o histórico, o objetivo e o tom."},
+{n:"Peça um formato",w:"Se você diz como quer receber, não precisa reorganizar a resposta depois.",
+bp:"Compara Python e JavaScript.",br:"Python e JavaScript são linguagens populares. Python é simples, enquanto JavaScript domina a web…\n\n(parágrafo corrido, difícil de comparar)",
+gp:"Compare Python e JavaScript em tabela (critério, Python, JavaScript) com 4 critérios. Termine com 1 frase de recomendação para iniciante.",
+gr:"Critério   | Python     | JavaScript\nSintaxe    | Limpa      | Mais solta\nUso        | Dados, IA  | Web e apps\nCurva      | Suave      | Média\nRodar em   | Servidor   | Navegador e servidor\n\nRecomendação: Python para lógica; JavaScript para ver páginas ganhando vida.",
+t:"Tabela, lista, JSON, 3 tópicos… diga o formato e o tamanho."},
+{n:"Use exemplos",w:"Um ou dois exemplos ensinam o padrão melhor do que descrever com palavras.",
+bp:"Classifique o sentimento: “Chegou atrasado.”",br:"O sentimento parece ser negativo, já que o cliente menciona atraso, embora outros fatores possam existir…\n\n(você queria só uma palavra)",
+gp:"Classifique como positivo, negativo ou neutro.\n\n“Amei o atendimento!” → positivo\n“Veio com defeito.” → negativo\n“Chegou atrasado.” →",
+gr:"negativo",t:"Dois ou três exemplos já fixam formato e critério."},
+{n:"Defina limites",w:"Sem limite de tamanho, público ou estilo, a IA decide por você, e costuma exagerar.",
+bp:"Resuma esse texto sobre energia solar.",br:"A energia solar é uma fonte renovável obtida da radiação do Sol. Pode ser convertida em eletricidade por painéis fotovoltaicos e em calor por coletores…\n\n(3 parágrafos: não era um resumo)",
+gp:"Resuma em no máximo 3 linhas, para um adolescente, sem termos técnicos.",
+gr:"Painéis solares transformam a luz do Sol em eletricidade. É uma energia limpa que não acaba e está cada vez mais barata. Muitas casas já usam para economizar na conta.",
+t:"Limite tamanho, público e o que deve ficar de fora."},
+{n:"Refine a resposta",w:"A primeira resposta é um rascunho. A conversa existe para você ajustar.",
+bp:"Faz um slogan pra minha padaria.\n\n(e usa o primeiro que vier)",br:"Padaria: sabor e qualidade.\n\n(serve para qualquer padaria)",
+gp:"Ficou genérico. Dê 5 opções curtas sobre pão quentinho de manhã, com tom leve e um toque de humor.",
+gr:"1. Acordou? O pão já está de pé.\n2. Quentinho antes do despertador.\n3. Manhã boa tem cheiro de pão.\n4. Aqui o café da manhã não espera.\n5. Pão fresco, humor fresco.",
+t:"Diga o que gostou, o que mudar e peça variações."}]},
+{id:"c",name:"Código melhor",items:[
+{n:"Informe stack e versão",w:"Sem saber a stack, a IA escolhe uma sozinha, e quase nunca é a sua.",
+bp:"Faz um CRUD de produtos.",br:"Segue um CRUD em PHP puro com mysqli_query e HTML misturado…\n\n(stack errada, sem validação, aberto a SQL injection)",
+gp:"Stack: Laravel 11, PHP 8.3, MySQL. Crie o CRUD de produtos (nome, preço, estoque) com Form Request, API Resource e apiResource. Sem pacotes extras.",
+gr:"Route::apiResource('products', ProductController::class);\n\nclass StoreProductRequest extends FormRequest {\n  public function rules(): array {\n    return [\n      'name' => 'required|string|max:120',\n      'price' => 'required|numeric|min:0',\n    ];\n  }\n}\n// + ProductResource e controller enxuto",
+t:"Linguagem, framework, versão e o que você não quer usar."},
+{n:"Peça padrões e boas práticas",w:"Diga qual padrão seguir. Sem isso, a IA joga tudo dentro do controller.",
+bp:"Cria o fluxo de criar pedido.",br:"Controller de 200 linhas com validação, regra de negócio e query no mesmo método.",
+gp:"Crie o fluxo de criar pedido seguindo SOLID: controller só recebe e responde, regra de negócio em um Service, tipos estritos e injeção de dependência. Explique a divisão em 2 linhas.",
+gr:"OrderController → valida (Form Request) e chama OrderService::create($dto)\nOrderService → calcula total e grava via repositório\nOrderRepository → só acesso a dados\n\nCada classe tem uma responsabilidade e dá para testar sozinha.",
+t:"Cite o padrão: SOLID, Clean Code, camadas, tipos estritos."},
+{n:"Plano antes do código",w:"Mudanças grandes pedem um plano aprovado antes, para não refazer 8 arquivos.",
+bp:"Migra meu sistema de login para JWT.",br:"Despeja 400 linhas mudando 8 arquivos de uma vez, com suposições erradas no meio.",
+gp:"Quero migrar o login para JWT. Antes de escrever código, liste o plano em passos curtos, aponte riscos e espere meu ok.",
+gr:"Plano:\n1. Instalar a lib e configurar a chave\n2. Endpoint de login que devolve o token\n3. Trocar o middleware de auth\n4. Atualizar o front\n\nRiscos: sessões ativas caem; expiração do token.\nPosso começar pelo passo 1?",
+t:"“Liste o plano e espere meu ok” evita retrabalho."},
+{n:"Passe o erro completo",w:"Para depurar, a IA precisa da mensagem, do trecho e do que você esperava.",
+bp:"Meu código não funciona, arruma.",br:"Pode ser vários motivos: variável indefinida, erro de sintaxe, falta de dependência… Pode enviar mais detalhes?",
+gp:"Erro: Call to a member function id() on null (OrderService.php:42)\nTrecho: [cole as linhas]\nEsperava: criar o pedido do usuário logado.\nJá tentei: dd($user), vem null dentro da fila.",
+gr:"Na fila não existe sessão, então auth()->user() é null. Passe o ID no job:\n\nProcessOrder::dispatch($order, $user->id);\n\ne busque com User::find($userId).",
+t:"Erro + trecho + esperado + o que já tentou."},
+{n:"Peça testes e casos de borda",w:"Sem direção, a IA testa só o caminho feliz.",
+bp:"Cria testes pra essa função.",br:"Um único teste: desconto válido retorna o valor certo.",
+gp:"Crie testes PHPUnit para calcularDesconto(): caminho feliz, valor zero, valor negativo, cupom expirado e cupom inexistente. Um teste por caso, com nomes descritivos.",
+gr:"test_aplica_desconto_valido()\ntest_valor_zero_retorna_zero()\ntest_valor_negativo_lanca_excecao()\ntest_cupom_expirado_ignora_desconto()\ntest_cupom_inexistente_lanca_excecao()",
+t:"Liste os casos de borda que importam para você."},
+{n:"Revisão como sênior",w:"Pedir uma revisão com critérios traz problemas reais, não elogios.",
+bp:"Revisa isso.",br:"O código parece bom! Talvez dê para melhorar alguns nomes.",
+gp:"Revise como dev sênior. Aponte bugs, falhas de segurança e problemas de desempenho, por ordem de gravidade, com a correção sugerida.",
+gr:"ALTA: query com concatenação (SQL injection) → use binding.\nMÉDIA: N+1 no loop de pedidos → with('items').\nBAIXA: método com 3 responsabilidades → extraia um Service.",
+t:"Defina critérios e a ordem de gravidade."}]},
+{id:"t",name:"Economizar tokens",items:[
+{n:"Mande só o trecho relevante",w:"Colar o arquivo inteiro gasta seu limite com código que não importa.",
+bp:"[cola 800 linhas]\nPor que a data sai errada?",br:"Resposta correta, mas a IA leu milhares de tokens à toa.",
+gp:"Esta função devolve 2026-11-10 em vez de 10/11/2026:\n[só a função, 15 linhas]\nStack: PHP 8.3 + Carbon.",
+gr:"Use ->format('d/m/Y') no lugar de toDateString().\n\nMesmo resultado, uma fração do custo.",
+t:"Envie a função, o erro e a stack. Não o projeto todo."},
+{n:"Peça só o que mudou",w:"Receber o arquivo inteiro de volta é o jeito mais caro de corrigir uma linha.",
+bp:"Corrige o bug e me manda o arquivo completo.",br:"Reenvia as 300 linhas, 290 iguais às anteriores.",
+gp:"Corrija o bug e responda só com o diff das linhas alteradas, sem explicação.",
+gr:"- $total = $price * $qty;\n+ $total = round($price * $qty, 2);",
+t:"“Só o diff” e “sem explicação” cortam a saída pela metade."},
+{n:"Uma tarefa por vez",w:"Pedir tudo de uma vez gera respostas cortadas, que você paga para refazer.",
+bp:"Cria login, cadastro, painel, CRUD e testes de uma vez.",br:"Entrega tudo pela metade, com código cortado no meio e partes esquecidas.",
+gp:"Vamos por etapas. Etapa 1: só o cadastro de usuário (rota, request, controller). Quando eu aprovar, seguimos para a 2.",
+gr:"Etapa 1 pronta: rota, RegisterRequest e RegisterController.\nDiga “ok” para seguir para o login.",
+t:"Etapas pequenas e aprovadas custam menos que um bloco enorme."},
+{n:"Resuma e abra um chat novo",w:"Conversas longas fazem a IA reler tudo a cada resposta e esquecer o começo.",
+bp:"Continuar no mesmo chat, já com 80 mensagens.",br:"A IA esquece o início, repete erros e cada resposta fica mais cara.",
+gp:"Resuma em 10 linhas o que decidimos (stack, padrões, o que está pronto) para eu colar em um chat novo.",
+gr:"Stack: Laravel 11. Padrão: controller → service → repositório.\nPronto: cadastro e login. Falta: painel e testes.\nRegra: responder só com diff.",
+t:"Guarde esse resumo e cole no começo do próximo chat."}]}
+];
+let c=0,i=0,v="bad";
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+function side(){$("#side").innerHTML=D.map((g,gi)=>`<div class="cat"><div class="ch"><span class="ci">${svg(g.id)}</span>${g.name}</div>${g.items.map((t,ti)=>`<button class="it${gi===c&&ti===i?" on":""}" data-c="${gi}" data-i="${ti}"><b>${ti+1}</b>${t.n}</button>`).join("")}</div>`).join("")}
+function panel(k,p,r,l,n){return `<section class="panel ${k}"><div class="ph"><span>${l}</span><button class="cp" data-k="${k}">Copiar prompt</button></div><div class="lab">Prompt</div><div class="box p">${esc(p)}</div><div class="lab">Resultado</div><div class="box${c===1?" c":""}">${esc(r)}</div><div class="note">${n}</div></section>`}
+function render(){const g=D[c],t=g.items[i];
+$("#main").innerHTML=`<article class="card"><div class="kick">${svg(g.id)}${g.name} · ${i+1}/${g.items.length}</div><h2>${t.n}</h2><p class="why">${t.w}</p>
+<div class="tabs"><button class="tab${v==="bad"?" on":""}" data-v="bad">✕ Errado</button><button class="tab${v==="good"?" on":""}" data-v="good">✓ Certo</button></div>
+<div class="grid" data-v="${v}">${panel("bad",t.bp,t.br,"✕ Jeito errado","Vago demais: a IA precisa adivinhar o que você quer.")}${panel("good",t.gp,t.gr,"✓ Jeito certo","Claro e direto: a IA sabe o que entregar.")}</div>
+<div class="tip"><b>Dica:</b> ${t.t}</div>
+<div class="pn"><button data-go="-1">← Anterior</button><button data-go="1">Próximo →</button></div></article>`;
+side()}
+function go(nc,ni){c=nc;i=ni;v="bad";render();document.body.classList.remove("open");window.scrollTo({top:0,behavior:"smooth"})}
+function step(d){let n=D.slice(0,c).reduce((a,g)=>a+g.items.length,0)+i+d,tot=D.reduce((a,g)=>a+g.items.length,0);n=(n+tot)%tot;for(let k=0;k<D.length;k++){if(n<D[k].items.length){go(k,n);return}n-=D[k].items.length}}
+document.addEventListener("click",e=>{
+const it=e.target.closest(".it");if(it){go(+it.dataset.c,+it.dataset.i);return}
+const tb=e.target.closest(".tab");if(tb){v=tb.dataset.v;render();return}
+const g=e.target.closest("[data-go]");if(g){step(+g.dataset.go);return}
+if(e.target.closest("#mb")){document.body.classList.add("open");return}
+if(e.target.id==="ov"){document.body.classList.remove("open");return}
+const cp=e.target.closest(".cp");if(cp){const t=D[c].items[i],x=cp.dataset.k==="bad"?t.bp:t.gp;
+try{navigator.clipboard.writeText(x).then(()=>{cp.textContent="Copiado ✓"})}catch(z){cp.textContent="Selecione e copie"}
+setTimeout(()=>{cp.textContent="Copiar prompt"},1400)}});
+render();
+</script>
+</body>
+</html>
